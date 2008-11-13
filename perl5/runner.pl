@@ -19,7 +19,7 @@ sub usage
 }
 
 my %options;
-getopt('updtDUPs', \%options) or usage();
+getopts('u:p:d:t:D:U:P:s:', \%options) or usage();
 
 my $user = $options{u} ? $options{u} : undef;
 my $password = $options{p} ? $options{p} : undef;
