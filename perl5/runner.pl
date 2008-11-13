@@ -14,11 +14,12 @@ sub usage
     print "    -D driver	Database driver (mysql, ...)\n";
     print "    -U user	Database username\n";
     print "    -P pass	Database password\n";
+    print "    -s dir	Save reports to dir instead of to a table\n";
     die;
 }
 
 my %options;
-getopt('updtDUP', \%options) or usage();
+getopt('updtDUPs', \%options) or usage();
 
 my $user = $options{u} ? $options{u} : undef;
 my $password = $options{p} ? $options{p} : undef;
@@ -27,11 +28,22 @@ my $dbuser = $options{U} ? $options{U} : 'root';
 my $dbpass = $options{P} ? $options{P} : undef;
 my $tbname = $options{t} ? $options{t} : 'dailySalesSummary';
 my $driver = $options{D} ? $options{D} : 'mysql';
+my $path = $options{s} ? $options{s} : undef;
 
 die "Need iTunes username and password\n" unless $user and $password;
-my $itc = iTunesConnect->new(user=>$user, password=>$password);
+my $itc = WWW::iTunesConnect->new(user=>$user, password=>$password);
 
 my %report = $itc->daily_sales_summary;
+
+if( $path and $report{'filename'} )
+{
+    my $filename = $path.'/'.$report{'filename'};
+    open(OUTFILE, ">$filename") or die("Couldn't open ".$filename);
+    print OUTFILE $report{'file'} or die("Couldn't write ".$filename);
+    close OUTFILE;
+    print 'Wrote file ',$filename, "\n";
+    exit;
+}
 
 my $db = DBI->connect("DBI:$driver:$dbname", $dbuser, $dbpass, {RaiseError=>1});
 die("Could not connect to database\n") unless ($db);
