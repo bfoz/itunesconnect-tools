@@ -1,4 +1,5 @@
 #! /usr/bin/perl
+# $Id: runner.pl,v 1.4 2008/11/13 07:49:09 bfoz Exp $
 
 use WWW::iTunesConnect;
 use DBI;
