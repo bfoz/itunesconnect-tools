@@ -80,13 +80,15 @@ if( $result = $db->query($q) )
 $numApps = 0;
 $appSales = array();
 $appUpdates = array();
-$q = 'SELECT VendorIdentifier, TitleEpisodeSeason, numSales, numUpdates FROM applications';
+$q = 'SELECT VendorIdentifier, TitleEpisodeSeason, numSales, numUpdates, avgDailySales, avgDailyUpdates FROM applications';
 if( $result = $db->query($q) )
 {
 	while( $row = $result->fetch_array() )
 	{
 		$appSales[$row[1]] = $row[2];
 		$appUpdates[$row[1]] = $row[3];
+		$avgDailySales[$row[1]] = $row[4];
+		$avgDailyUpdates[$row[1]] = $row[5];
 		$appNames[] = $row[1];
 	}
 	$result->close();
@@ -344,9 +346,17 @@ if ($_POST['tbl_or_chrt']=='chart') {
 	<div class="topform">
 		<table>
 			<thead>
-				<td>&gt;&gt; <?= $numApps . ' Application'.(($numApps != 1) ? 's' : '') ?></td>
-				<td>Sales</td>
-				<td>Upgrades</td>
+				<tr>
+					<td rowspan=2>&gt;&gt; <?= $numApps . ' Application'.(($numApps != 1) ? 's' : '') ?></td>
+					<td colspan=2>Totals</td>
+					<td colspan=2>Daily Averages</td>
+				</tr>
+				<tr>
+					<td>Sales</td>
+					<td>Updates</td>
+					<td>Sales</td>
+					<td>Updates</td>
+				</tr>
 			</thead>
 			<tbody class="scroll">
 <?php
@@ -355,7 +365,7 @@ foreach($appNames as $a)
 	echo '<tr><td><input type="checkbox" name="chk_apps[]" value="' . $a . '"';
 	if(empty($reportAppNames) or in_array($a,$reportAppNames)) echo ' checked="checked"';
 	echo ' />' . $a;
-	echo '</td><td>'.$appSales[$a].'</td><td>'.$appUpdates[$a].'</td></tr>'."\n";
+	echo '</td><td>'.$appSales[$a].'</td><td>'.$appUpdates[$a].'</td><td>'.$avgDailySales[$a].'</td><td>'.$avgDailyUpdates[$a].'</td></tr>'."\n";
 }
 ?>
 			</tbody>
