@@ -1,5 +1,5 @@
 #! /usr/bin/perl
-# $Id: runner.pl,v 1.4 2008/11/13 07:49:09 bfoz Exp $
+# $Id: runner.pl,v 1.5 2008/11/14 03:40:46 bfoz Exp $
 
 use WWW::iTunesConnect;
 use DBI;
@@ -55,3 +55,29 @@ s/[\\\/ ]//g for @columns;  # Elide characters that can't be in column names
 
 my $insertSummary = $db->prepare("INSERT INTO $tbname SET ".join(',',@columns));
 $insertSummary->execute(@{$_}) for @{$report{'data'}};
+
+my $appTable = 'applications';
+
+# Handle new applications
+my $s = $db->prepare("SELECT $tbname.VendorIdentifier FROM $tbname LEFT JOIN $appTable ON $tbname.VendorIdentifier = $appTable.VendorIdentifier WHERE $appTable.VendorIdentifier is NULL GROUP BY $tbname.VendorIdentifier");
+if( $s->execute() )
+{
+    while( my ($vid) = $s->fetchrow_array() )
+    {
+	$db->do("INSERT INTO $appTable (VendorIdentifier,TitleEpisodeSeason) SELECT VendorIdentifier, TitleEpisodeSeason FROM dailySalesSummary WHERE VendorIdentifier='$vid' LIMIT 1");
+#	$db->do("INSERT INTO $appTable (VendorIdentifier,TitleEpisodeSeason,numDays) SELECT VendorIdentifier, TitleEpisodeSeason, COUNT(DISTNCT BeginDate) FROM dailySalesSummary WHERE VendorIdentifier='$vid'");
+    }
+}
+
+# Brute force update. Need to do this better.
+$s = $db->prepare("SELECT VendorIdentifier FROM $appTable");
+if( $s->execute() )
+{
+    while( my ($vid) = $s->fetchrow_array() )
+    {
+	$db->do("UPDATE $appTable SET numDays=(SELECT COUNT(DISTINCT BeginDate) FROM $tbname WHERE VendorIdentifier='$vid') WHERE VendorIdentifier='$vid'");
+	$db->do("UPDATE $appTable SET numSales=(SELECT SUM(Units) FROM $tbname WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=1) WHERE VendorIdentifier='$vid'");
+	$db->do("UPDATE $appTable SET numUpdates=(SELECT SUM(Units) FROM $tbname WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=7) WHERE VendorIdentifier='$vid'");
+	$db->do("UPDATE $appTable SET avgDailySales=(numSales/numDays), avgDailyUpdates=(numUpdates/numDays) WHERE VendorIdentifier='$vid'");
+    }
+}

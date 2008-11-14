@@ -30,3 +30,17 @@ CREATE TABLE `dailySalesSummary` (
   PRIMARY KEY `ID` (`ID`),
   UNIQUE KEY `VID_PTI_BeginDate_CountryCode` (`VendorIdentifier`(255),`ProductTypeIdentifier`,`BeginDate`,`CountryCode`(2))
 ) COMMENT='Daily Sales/Trend Summary Reports' AUTO_INCREMENT=1;
+
+DROP TABLE IF EXISTS `applications`;
+CREATE TABLE `applications` (
+  `ID` INT UNSIGNED NOT NULL auto_increment, -- Primary Key
+  `VendorIdentifier` TINYTEXT NOT NULL,	-- Foreign key for dailySalesSummary
+  `TitleEpisodeSeason` TINYTEXT NOT NULL,
+  `numDays` INT UNSIGNED,		-- Number of daily reports
+  `numSales` INT UNSIGNED,		-- Lifetime number of units sold
+  `numUpdates` INT UNSIGNED,		-- Lifetime number of updates
+  `avgDailySales` FLOAT,		-- Lifetime average of units sold per day
+  `avgDailyUpdates` FLOAT,		-- Lifetime average of updates per day
+  PRIMARY KEY `ID` (`ID`),
+  UNIQUE KEY `VID` (`VendorIdentifier`(255))
+) COMMENT='Per-Application statistics';
