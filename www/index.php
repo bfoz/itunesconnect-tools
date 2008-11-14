@@ -95,6 +95,8 @@ if( $result = $db->query($q) )
 
 	sort($appNames);
 	$numApps = count($appNames);
+	$appTotalSales = array_sum($appSales);
+	$appTotalUpdates = array_sum($appUpdates);
 }
 
 // Create a WHERE clause for the set of dates to retrieve
@@ -358,6 +360,15 @@ if ($_POST['tbl_or_chrt']=='chart') {
 					<td>Updates</td>
 				</tr>
 			</thead>
+			<tfoot>
+				<tr>
+					<td>Total</td>
+					<td><?= $appTotalSales ?></td>
+					<td><?= $appTotalUpdates ?></td>
+					<td></td>
+					<td></td>
+				</tr>
+			</tfoot>
 			<tbody class="scroll">
 <?php
 foreach($appNames as $a)
