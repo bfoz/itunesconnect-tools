@@ -1,0 +1,76 @@
+body {
+	font-family:arial;
+	font-size:12px;
+}
+table.t1 { 
+	border-collapse:collapse;
+	border-bottom:1px solid #c0c0c0;
+	border-right:1px solid #c0c0c0;
+}
+table.t1 td { 
+	border-collapse:collapse;
+	border-left:1px solid #c0c0c0; 
+	border-top:1px solid #c0c0c0; 
+	padding:4px;
+	margin:0px;
+	text-align:right;
+	font-size:12px;
+}
+table.t1 td.t2 {
+	background-color:#eeeeff;
+}
+table.t1 tr.h2 td {
+	background-color:#ccccff;
+	font-weight:bold;
+	text-align:center;
+}
+table.t1 tr.h2 td.t3 {
+	background-color:#dfdfdf;
+}
+table.t1 tr.h1 td, table.t1 td.h1, table.t1 tr.h2 td.h1 {
+	background-color:#333333;
+	color:#ffffff;
+	font-weight:bold;
+	text-align:left;
+}
+table.t1 tr.h1 td {
+	text-align:center;
+}
+table.t1 td.h1 a {
+	text-decoration:none;
+	cursor:default;
+	color:#ffffff;
+}
+table.t1 tr.h3 td {
+	background-color:#ccffcc;
+	font-weight:bold;
+}
+table.t1 tr.h3 td.t2 {
+	background-color:#aaffaa;
+}
+table.t1 tr.rowOver td {
+	background-color:#ffcccc;
+}
+table.t1 tr.rowOver td.h1 {
+	color:#333333;
+	background-color:#ffaaaa;
+}
+table.t1 tr.rowOver td.t2 {
+	background-color:#ffaaaa;
+}
+div.topform {
+	float:left;
+	margin-right:10px;
+}
+div.topform tbody.scroll {
+	height:200px;
+	overflow-y:auto;
+	overflow-x:hidden;
+}
+div.topform thead td {
+	color:#ffffff;
+	font-weight:bold;
+	background-color:#333333;
+	padding:4px;
+	text-decoration:none;
+}
