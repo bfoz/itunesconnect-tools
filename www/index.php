@@ -76,28 +76,21 @@ if( $result = $db->query($q) )
 	$result->close();
 }
 
-// Get total sales and upgrades for each app
+// Get total sales and updates for each app
 $numApps = 0;
 $appSales = array();
-$appUpgrades = array();
-$q = 'SELECT SUM(Units), ProductTypeIdentifier, TitleEpisodeSeason FROM dailySalesSummary GROUP BY TitleEpisodeSeason, ProductTypeIdentifier';
+$appUpdates = array();
+$q = 'SELECT VendorIdentifier, TitleEpisodeSeason, numSales, numUpdates FROM applications';
 if( $result = $db->query($q) )
 {
 	while( $row = $result->fetch_array() )
 	{
-		switch( intval($row[1]) )
-		{
-			case 1: $appSales[$row[2]] = $row[0];	break;
-			case 7: $appUpgrades[$row[2]] = $row[0];	break;
-			default:
-				echo "Unrecognized ProductTypeIdentifier\n";
-				continue;
-		}
-		$appNames[$row[2]] = 0;
+		$appSales[$row[1]] = $row[2];
+		$appUpdates[$row[1]] = $row[3];
+		$appNames[] = $row[1];
 	}
 	$result->close();
 
-	$appNames = array_keys($appNames);
 	sort($appNames);
 	$numApps = count($appNames);
 }
@@ -362,7 +355,7 @@ foreach($appNames as $a)
 	echo '<tr><td><input type="checkbox" name="chk_apps[]" value="' . $a . '"';
 	if(empty($reportAppNames) or in_array($a,$reportAppNames)) echo ' checked="checked"';
 	echo ' />' . $a;
-	echo '</td><td>'.$appSales[$a].'</td><td>'.$appUpgrades[$a].'</td></tr>'."\n";
+	echo '</td><td>'.$appSales[$a].'</td><td>'.$appUpdates[$a].'</td></tr>'."\n";
 }
 ?>
 			</tbody>
