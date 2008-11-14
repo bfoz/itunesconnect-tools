@@ -80,7 +80,7 @@ if( $result = $db->query($q) )
 $numApps = 0;
 $appSales = array();
 $appUpdates = array();
-$q = 'SELECT VendorIdentifier, TitleEpisodeSeason, numSales, numUpdates, avgDailySales, avgDailyUpdates FROM applications';
+$q = 'SELECT VendorIdentifier, TitleEpisodeSeason, numSales, numUpdates, FORMAT(avgDailySales,1), FORMAT(avgDailyUpdates,1) FROM applications';
 if( $result = $db->query($q) )
 {
 	while( $row = $result->fetch_array() )
