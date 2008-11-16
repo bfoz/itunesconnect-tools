@@ -392,6 +392,13 @@ foreach($appNames as $a)
 				<td>Sales</td>
 				<td>Upgrades</td>
 			</thead>
+			<tfoot>
+				<tr>
+					<td>Total</td>
+					<td><?= array_sum($dateSales) ?></td>
+					<td><?= array_sum($dateUpdates) ?></td>
+				</tr>
+			</tfoot>
 			<tbody class="scroll">
 <?php
 foreach($allDates as $d)
