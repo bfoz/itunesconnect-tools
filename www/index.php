@@ -1,6 +1,6 @@
 <?php
 /*
-	$Id: index.php,v 1.9 2008/11/16 07:08:38 bfoz Exp $
+	$Id: index.php,v 1.10 2008/11/16 08:01:40 bfoz Exp $
 */
 
 // Database account info
@@ -10,17 +10,6 @@ $dbname = 'iTunesConnect';
 
 // $langs array converts country codes to full names
 require('langs.php');
-
-// arrays for filtering
-$valid_regions = array();
-if(is_array($_POST['chk_regions'])) $valid_regions = $_POST['chk_regions'];
-$valid_countries = array();
-foreach($valid_regions as $vr) {
-	if(is_array($regions[$vr])) {
-		foreach($regions[$vr] as $cname)
-			$valid_countries[] = $cname;
-	}
-}
 
 $db = new mysqli('localhost', $user, $password, $dbname);
 if( mysqli_connect_errno() )
@@ -134,6 +123,17 @@ if( is_array($_POST['chk_apps']) )
 	$where[] = '('.join(' OR ', $where_name).')';
 }
 
+if( is_array($_POST['chk_regions']) )
+{
+	$where_country = array();
+	foreach($_POST['chk_regions'] as $vr)
+		$where_country = array_merge($where_country, $regions[$vr]);
+
+	foreach($where_country as &$v)
+		$v = "CountryCode='$v'";
+	$where[] = '('.join(' OR ', $where_country).')';
+}
+
 $where = join(' AND ', $where);
 if( strlen($where) )
 	$where = ' WHERE '.$where;
@@ -152,6 +152,7 @@ if( $result = $db->query($q) )
 
 // Fetch app info
 $reportAppNames = array();
+$reportCountries = array();
 $reportNumApps = 0;
 $sales = array();
 $totalSales = array();
@@ -164,21 +165,23 @@ if( $result = $db->query($q, MYSQLI_USE_RESULT) )
 	$apps = array();
 	while( $row = $result->fetch_assoc() )
 	{
+		$cc = $row['CountryCode'];
 		$date = $row['BeginDate'];
 		$name = $row['TitleEpisodeSeason'];
 		$units = intval($row['Units']);
+		$reportCountries[$cc] += $units;
 		switch( intval($row['ProductTypeIdentifier']) )
 		{
 			case 1:
 				$totalSales[$date][$name] += $units;
 				$totalAppSales[$name] += $units;
-				$numCountrySales[$name][$row['CountryCode']] += $units;
-				$sales[$date][$name][$row['CountryCode']] += $units;
+				$numCountrySales[$name][$cc] += $units;
+				$sales[$date][$name][$cc] += $units;
 				break;
 			case 7:
 				$totalUpgrades[$date][$name] += $units;
 				$totalAppUpgrades[$name] += $units;
-				$upgrades[$date][$name][$row['CountryCode']] += $units;
+				$upgrades[$date][$name][$cc] += $units;
 				break;
 			default:
 				echo "Unrecognized ProductTypeIdentifier\n";
@@ -188,8 +191,9 @@ if( $result = $db->query($q, MYSQLI_USE_RESULT) )
 	}
 	$result->close();
 	$reportAppNames = array_keys($reportAppNames);
-	sort($appNames);
+	sort($reportAppNames);
 	$numApps = count($appNames);
+	ksort($reportCountries);
 }
 $db->close();
 
@@ -244,11 +248,12 @@ $echo .= '<tr class="h1"><td></td>'.$dateRow.'</tr>';
 $echo .= '<tr class="h2"><td class="h1"></td>'.$appRow."</tr>\n";
 // write unit count for each country for each day for each app
 $rownum = 0;
-foreach($langs as $cc => $cname) {
-	// filter validcountries
-	if (!empty($valid_countries) and !in_array($cc,$valid_countries)) continue;
+foreach($reportCountries as $cc => $num)
+{
+	if( !$num )	// Ignore countries with no sales and no updates
+		continue;
 
-	$row = '<tr id="r' . $rownum . '"><td class="h1" title="' . $cc . '">' . $cname . '</td>';
+	$echo .= '<tr id="r' . $rownum . '"><td class="h1" title="' . $cc . '">' .$langs[$cc]. '</td>';
 	$total_sales = 0;
 	$total_upgrades = 0;
 	$class = '';
@@ -259,38 +264,35 @@ foreach($langs as $cc => $cname) {
 		{
 			$numSales = $sales[$date][$name][$cc];
 			$numUpgrades = $upgrades[$date][$name][$cc];
-			$row .= '<td' . $class . '>';
+			$echo .= '<td' . $class . '>';
 			if( intval($numUpgrades) )
 			{
-				$row .= intval($numSales) ? $numSales : '0';
-				$row .= ' / '.$numUpgrades;
+				$echo .= intval($numSales) ? $numSales : '0';
+				$echo .= ' / '.$numUpgrades;
 			}
 			else
-				$row .= $numSales;
-			$row .= '</td>';
+				$echo .= $numSales;
+			$echo .= '</td>';
 			$total_sales += intval($numSales);
 			$total_upgrades += intval($numUpgrades);
 		}
 		$class = ($class == '') ? ' class="t2"' : '';
 	}
-	if( $total_sales + $total_upgrades )
+	// Totals column
+	foreach( $reportAppNames as $name )
 	{
-		$echo .= $row;
-		foreach( $reportAppNames as $name )
+		$echo .= '<td>';
+		if( $total_upgrades )
 		{
-			$echo .= '<td>';
-			if( $total_upgrades )
-			{
-				$echo .= intval($total_sales) ? $total_sales : '0';
-				$echo .= ' / '.$total_upgrades;
-			}
-			else
-				$echo .= $numCountrySales[$name][$cc];
-			$echo .= '</td>';
+			$echo .= intval($total_sales) ? $total_sales : '0';
+			$echo .= ' / '.$total_upgrades;
 		}
-		$echo .= "</tr>\n";
-		$rownum++;
+		else
+			$echo .= $numCountrySales[$name][$cc];
+		$echo .= '</td>';
 	}
+	$echo .= "</tr>\n";
+	$rownum++;
 }
 // write totals for each day for each app
 $echo .= '<tr class="h3"><td><b>TOTAL</b></td>';
