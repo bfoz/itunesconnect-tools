@@ -1,4 +1,8 @@
 <?php
+/*
+	$Id: index.php,v 1.8 2008/11/16 06:39:08 bfoz Exp $
+*/
+
 // Database account info
 $user = 'root';
 $password = '';
