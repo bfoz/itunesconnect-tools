@@ -31,27 +31,30 @@ $appsSelected = false;
 // Get all available report dates and sales/upgrades for each day
 $allDates = array();
 $dateSales = array();
-$dateUpgrades = array();
-$numDates = 0;
-$q = 'SELECT UNIX_TIMESTAMP(BeginDate), ProductTypeIdentifier, SUM(Units) FROM dailySalesSummary GROUP BY BeginDate, ProductTypeIdentifier ORDER BY BeginDate DESC';
+$dateUpdates = array();
+$q='SELECT UNIX_TIMESTAMP(BeginDate), numSales FROM dailyTotalSales';
 if( $result = $db->query($q) )
 {
 	while( $row = $result->fetch_array() )
 	{
-		switch( intval($row[1]) )
-		{
-			case 1: $dateSales[$row[0]] = $row[2];	break;
-			case 7: $dateUpgrades[$row[0]] = $row[2];	break;
-			default:
-				echo "Unrecognized ProductTypeIdentifier\n";
-				continue 2;
-		}
+		$dateSales[$row[0]] = $row[1];
 		$allDates[$row[0]] = 0;
 	}
-	$allDates = array_keys($allDates);
-	$numDates = count($allDates);
 	$result->close();
 }
+$q='SELECT UNIX_TIMESTAMP(BeginDate), numUpdates FROM dailyTotalUpdates';
+if( $result = $db->query($q) )
+{
+	while( $row = $result->fetch_array() )
+	{
+		$dateUpdates[$row[0]] = $row[1];
+		$allDates[$row[0]] = 0;
+	}
+	$result->close();
+}
+$allDates = array_keys($allDates);
+rsort($allDates, SORT_NUMERIC);
+$numDates = count($allDates);
 
 // Transpose the regions table
 foreach($regions as $k => $v)
@@ -397,7 +400,7 @@ foreach($allDates as $d)
 	if( in_array($d,$dates) )
 		echo ' checked="checked"';
 	echo ' /> ' . date('M d, Y', $d) . '</td>';
-	echo '<td>'.$dateSales[$d].'</td><td>'.$dateUpgrades[$d].'</td></tr>';
+	echo '<td>'.$dateSales[$d].'</td><td>'.$dateUpdates[$d].'</td></tr>';
 }
 ?>
 			</tbody>
