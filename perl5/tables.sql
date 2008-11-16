@@ -31,6 +31,13 @@ CREATE TABLE `dailySalesSummary` (
   UNIQUE KEY `VID_PTI_BeginDate_CountryCode` (`VendorIdentifier`(255),`ProductTypeIdentifier`,`BeginDate`,`CountryCode`(2))
 ) COMMENT='Daily Sales/Trend Summary Reports' AUTO_INCREMENT=1;
 
+CREATE OR REPLACE VIEW dailyTotalSales AS SELECT BeginDate, sum(Units) as numSales FROM dailySalesSummary WHERE ProductTypeIdentifier=1 GROUP BY BeginDate;
+
+CREATE OR REPLACE VIEW dailyTotalUpdates AS SELECT BeginDate, sum(Units) as numUpdates FROM dailySalesSummary WHERE ProductTypeIdentifier=7 GROUP BY BeginDate;
+
+-- This would be a lot easier if MySQL supported FULL OUTER JOIN
+-- CREATE OR REPLACE VIEW dailyTotals AS SELECT BeginDate, numSales, numUpdates FROM dailyTotalSales FULL OUTER JOIN dailyTotalUpdates USING(BeginDate);
+
 DROP TABLE IF EXISTS `applications`;
 CREATE TABLE `applications` (
   `ID` INT UNSIGNED NOT NULL auto_increment, -- Primary Key
