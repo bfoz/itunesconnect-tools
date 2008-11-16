@@ -1,6 +1,6 @@
 <?php
 /*
-	$Id: index.php,v 1.8 2008/11/16 06:39:08 bfoz Exp $
+	$Id: index.php,v 1.9 2008/11/16 07:08:38 bfoz Exp $
 */
 
 // Database account info
@@ -73,8 +73,8 @@ if( $result = $db->query($q) )
 	{
 		switch( intval($row[1]) )
 		{
-			case 1: $regionSales[$ccToRegion[$row[0]]] = $row[2];	break;
-			case 7: $regionUpgrades[$ccToRegion[$row[0]]] = $row[2];	break;
+			case 1: $regionSales[$ccToRegion[$row[0]]] += intval($row[2]);	break;
+			case 7: $regionUpgrades[$ccToRegion[$row[0]]] += intval($row[2]);	break;
 			default:
 				echo "Unrecognized ProductTypeIdentifier\n";
 				continue 2;
@@ -424,6 +424,13 @@ foreach($allDates as $d)
 				<td>Sales</td>
 				<td>Upgrades</td>
 			</thead>
+			<tfoot>
+				<tr>
+					<td>Total</td>
+					<td><?= array_sum($regionSales) ?></td>
+					<td><?= array_sum($regionUpgrades) ?></td>
+				</tr>
+			</tfoot>
 			<tbody>
 <?php
 foreach($regions as $reg => $arr)
