@@ -1,5 +1,5 @@
 #! /usr/bin/perl
-# $Id: runner.pl,v 1.5 2008/11/14 03:40:46 bfoz Exp $
+# $Id: runner.pl,v 1.6 2008/11/21 20:37:32 bfoz Exp $
 
 use WWW::iTunesConnect;
 use DBI;
@@ -52,6 +52,9 @@ die("Could not connect to database\n") unless ($db);
 my @columns;
 push @columns, "$_=?" for @{$report{'header'}};
 s/[\\\/ ]//g for @columns;  # Elide characters that can't be in column names
+
+# Reformat dates into something a database can use
+@{$_} = map { (/(\d{2})\/(\d{2})\/(\d{4})/ ? "$3$1$2" : $_) } @{$_} for @{$report{'data'}};
 
 my $insertSummary = $db->prepare("INSERT INTO $tbname SET ".join(',',@columns));
 $insertSummary->execute(@{$_}) for @{$report{'data'}};
