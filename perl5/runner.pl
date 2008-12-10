@@ -1,6 +1,7 @@
 #! /usr/bin/perl
-# $Id: runner.pl,v 1.7 2008/12/03 05:01:59 bfoz Exp $
+# $Id: runner.pl,v 1.8 2008/12/10 19:58:53 bfoz Exp $
 
+use strict;
 use WWW::iTunesConnect;
 use DBI;
 use Getopt::Std;
@@ -16,31 +17,55 @@ sub usage
     print "    -U user	Database username\n";
     print "    -P pass	Database password\n";
     print "    -s dir	Save reports to dir instead of to a table\n";
+    print "    -c path	Path to config file (defaults to ./config.pl)\n";
     die;
 }
 
+# Default configuration options
+my %config = (	'user' => undef,
+		'password' => undef,
+		'dbname' => 'iTunesConnect',
+		'dbuser' => 'root',
+		'dbpass' => undef,
+		'tbname' => 'dailySalesSummary',
+		'driver' => 'mysql',
+		'path' => undef,
+		'config' => 'config.pl');
+
+# Parse the command line options
 my %options;
-getopts('u:p:d:t:D:U:P:s:', \%options) or usage();
+getopts('u:p:d:t:D:U:P:s:c:', \%options) or usage();
+# Handle -c early so the default config file path can be overriden
+$config{config} = $options{c} if $options{c};
+delete $options{config};	# Don't need this one any more
 
-my $user = $options{u} ? $options{u} : undef;
-my $password = $options{p} ? $options{p} : undef;
-my $dbname = $options{d} ? $options{d} : 'iTunesConnect';
-my $dbuser = $options{U} ? $options{U} : 'root';
-my $dbpass = $options{P} ? $options{P} : undef;
-my $tbname = $options{t} ? $options{t} : 'dailySalesSummary';
-my $driver = $options{D} ? $options{D} : 'mysql';
-my $path = $options{s} ? $options{s} : undef;
+# Config file overrides defaults
+my %in = do $config{config};
+@config{keys %in} = values %in;
 
-die "Need iTunes username and password\n" unless $user and $password;
-my $itc = WWW::iTunesConnect->new(user=>$user, password=>$password);
+my %opt2config = (  'u' => 'user',
+                    'p' => 'password',
+                    'd' => 'dbname',
+                    'U' => 'dbuser',
+                    'P' => 'dbpass',
+                    't' => 'tbname',
+                    'D' => 'mysql',
+                    's' => 'path',
+                 );
+
+# Command line options override defaults and config.pl
+@config{@opt2config{keys %options}} = values %options;
+
+die "Need iTunes username and password\n" unless $config{user} and $config{password};
+my $itc = WWW::iTunesConnect->new(user=>$config{user}, password=>$config{password});
 
 # If only saving latest report to file, do it and then exit
-if( $path )
+if( $config{path} )
 {
     my %report = $itc->daily_sales_summary;
     die("No report filename provided by server\n") unless $report{'filename'};
 
-    my $filename = $path.'/'.$report{'filename'};
+    my $filename = $config{path}.'/'.$report{'filename'};
     open(OUTFILE, ">$filename") or die("Couldn't open ".$filename);
     print OUTFILE $report{'file'} or die("Couldn't write ".$filename);
     close OUTFILE;
@@ -53,12 +78,12 @@ if( $path )
 # Get the list of dates available from iTC
 my @dates = $itc->daily_sales_summary_dates;
 
-my $db = DBI->connect("DBI:$driver:$dbname", $dbuser, $dbpass, {RaiseError=>1});
+my $db = DBI->connect("DBI:$config{driver}:$config{dbname}", $config{dbuser}, $config{dbpass}, {RaiseError=>1});
 die("Could not connect to database\n") unless ($db);
 
 # See which dates aren't already in the database
 my $dates = join(',', map { "'$_'" } @dates);
-my $selectDates = $db->prepare("SELECT DATE_FORMAT(BeginDate,'%m/%d/%Y') FROM $tbname WHERE DATE_FORMAT(BeginDate,'%m/%d/%Y') IN ($dates) GROUP BY BeginDate ORDER BY BeginDate DESC");
+my $selectDates = $db->prepare("SELECT DATE_FORMAT(BeginDate,'%m/%d/%Y') FROM $config{tbname} WHERE DATE_FORMAT(BeginDate,'%m/%d/%Y') IN ($dates) GROUP BY BeginDate ORDER BY BeginDate DESC");
 $selectDates->execute;
 foreach my $row ( @{$selectDates->fetchall_arrayref} )
 {
@@ -77,13 +102,15 @@ for( @dates )
     # Reformat dates into something a database can use
     @{$_} = map { (/(\d{2})\/(\d{2})\/(\d{4})/ ? "$3$1$2" : $_) } @{$_} for @{$report{'data'}};
 
-    my $insertSummary = $db->prepare("INSERT INTO $tbname SET ".join(',',@columns));
+    my $insertSummary = $db->prepare("INSERT INTO $config{tbname} SET ".join(',',@columns));
     $insertSummary->execute(@{$_}) for @{$report{'data'}};
+}
 
+if( scalar @dates )
+{
     my $appTable = 'applications';
-
     # Handle new applications
-    my $s = $db->prepare("SELECT $tbname.VendorIdentifier FROM $tbname LEFT JOIN $appTable ON $tbname.VendorIdentifier = $appTable.VendorIdentifier WHERE $appTable.VendorIdentifier is NULL GROUP BY $tbname.VendorIdentifier");
+    my $s = $db->prepare("SELECT $config{tbname}.VendorIdentifier FROM $config{tbname} LEFT JOIN $appTable ON $config{tbname}.VendorIdentifier = $appTable.VendorIdentifier WHERE $appTable.VendorIdentifier is NULL GROUP BY $config{tbname}.VendorIdentifier");
     if( $s->execute() )
     {
 	while( my ($vid) = $s->fetchrow_array() )
@@ -99,9 +126,9 @@ for( @dates )
     {
 	while( my ($vid) = $s->fetchrow_array() )
 	{
-	    $db->do("UPDATE $appTable SET numDays=(SELECT COUNT(DISTINCT BeginDate) FROM $tbname WHERE VendorIdentifier='$vid') WHERE VendorIdentifier='$vid'");
-	    $db->do("UPDATE $appTable SET numSales=(SELECT SUM(Units) FROM $tbname WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=1) WHERE VendorIdentifier='$vid'");
-	    $db->do("UPDATE $appTable SET numUpdates=(SELECT SUM(Units) FROM $tbname WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=7) WHERE VendorIdentifier='$vid'");
+	    $db->do("UPDATE $appTable SET numDays=(SELECT COUNT(DISTINCT BeginDate) FROM $config{tbname} WHERE VendorIdentifier='$vid') WHERE VendorIdentifier='$vid'");
+	    $db->do("UPDATE $appTable SET numSales=(SELECT SUM(Units) FROM $config{tbname} WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=1) WHERE VendorIdentifier='$vid'");
+	    $db->do("UPDATE $appTable SET numUpdates=(SELECT SUM(Units) FROM $config{tbname} WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=7) WHERE VendorIdentifier='$vid'");
 	    $db->do("UPDATE $appTable SET avgDailySales=(numSales/numDays), avgDailyUpdates=(numUpdates/numDays) WHERE VendorIdentifier='$vid'");
 	}
     }
