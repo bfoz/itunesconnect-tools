@@ -1,6 +1,7 @@
 CREATE DATABASE `iTunesConnect`;
 use `iTunesConnect`;
 
+# Units and CustomerPrice must support signed numbers, which indicate refunds/returns
 DROP TABLE IF EXISTS `dailySalesSummary`;
 CREATE TABLE `dailySalesSummary` (
   `ID` INT UNSIGNED NOT NULL auto_increment, -- Primary Key
@@ -13,7 +14,7 @@ CREATE TABLE `dailySalesSummary` (
   `TitleEpisodeSeason` TINYTEXT NOT NULL,
   `LabelStudioNetwork` TINYTEXT,
   `ProductTypeIdentifier` TINYINT UNSIGNED NOT NULL,
-  `Units` INT UNSIGNED,
+  `Units` INT,
   `RoyaltyPrice` DECIMAL(10,2) UNSIGNED NOT NULL,
   `BeginDate` DATE NOT NULL,
   `EndDate` DATE NOT NULL,
@@ -24,7 +25,7 @@ CREATE TABLE `dailySalesSummary` (
   `SeasonPass` TINYTEXT,
   `ISAN` TINYTEXT,
   `AppleIdentifier` TINYTEXT NOT NULL,
-  `CustomerPrice` DECIMAL(10,2) UNSIGNED NOT NULL,
+  `CustomerPrice` DECIMAL(10,2) NOT NULL,
   `CMA` TINYTEXT,
   `AssetContentFlavor` TINYTEXT,
   PRIMARY KEY `ID` (`ID`),
