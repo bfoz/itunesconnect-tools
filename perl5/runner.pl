@@ -1,5 +1,5 @@
 #! /usr/bin/perl
-# $Id: runner.pl,v 1.9 2009/01/08 02:03:17 bfoz Exp $
+# $Id: runner.pl,v 1.10 2009/01/08 03:19:12 bfoz Exp $
 
 use strict;
 use WWW::iTunesConnect;
@@ -12,7 +12,6 @@ sub usage
     print "    -u user	iTunes Connect username\n";
     print "    -p pass	iTunes Connect password\n";
     print "    -d dbname	Database name\n";
-    print "    -t tbname	Daily summary table name\n";
     print "    -D driver	Database driver (mysql, ...)\n";
     print "    -U user	Database username\n";
     print "    -P pass	Database password\n";
@@ -27,14 +26,13 @@ my %config = (	'user' => undef,
 		'dbname' => 'iTunesConnect',
 		'dbuser' => 'root',
 		'dbpass' => undef,
-		'tbname' => 'dailySalesSummary',
 		'driver' => 'mysql',
 		'path' => undef,
 		'config' => 'config.pl');
 
 # Parse the command line options
 my %options;
-getopts('u:p:d:t:D:U:P:s:c:', \%options) or usage();
+getopts('u:p:d:D:U:P:s:c:', \%options) or usage();
 # Handle -c early so the default config file path can be overriden
 $config{config} = $options{c} if $options{c};
 delete $options{config};	# Don't need this one any more
@@ -48,7 +46,6 @@ my %opt2config = (  'u' => 'user',
                     'd' => 'dbname',
                     'U' => 'dbuser',
                     'P' => 'dbpass',
-                    't' => 'tbname',
                     'D' => 'mysql',
                     's' => 'path',
                  );
@@ -83,7 +80,7 @@ die("Could not connect to database\n") unless ($db);
 
 # See which dates aren't already in the database
 my $dates = join(',', map { "'$_'" } @dates);
-my $selectDates = $db->prepare("SELECT DATE_FORMAT(BeginDate,'%m/%d/%Y') FROM $config{tbname} WHERE DATE_FORMAT(BeginDate,'%m/%d/%Y') IN ($dates) GROUP BY BeginDate ORDER BY BeginDate DESC");
+my $selectDates = $db->prepare("SELECT DATE_FORMAT(BeginDate,'%m/%d/%Y') FROM dailySalesSummary WHERE DATE_FORMAT(BeginDate,'%m/%d/%Y') IN ($dates) GROUP BY BeginDate ORDER BY BeginDate DESC");
 $selectDates->execute;
 foreach my $row ( @{$selectDates->fetchall_arrayref} )
 {
@@ -102,7 +99,7 @@ for( @dates )
     # Reformat dates into something a database can use
     @{$_} = map { (/(\d{2})\/(\d{2})\/(\d{4})/ ? "$3$1$2" : $_) } @{$_} for @{$report{'data'}};
 
-    my $insertSummary = $db->prepare("INSERT INTO $config{tbname} SET ".join(',',@columns));
+    my $insertSummary = $db->prepare("INSERT INTO dailySalesSummary SET ".join(',',@columns));
     $insertSummary->execute(@{$_}) for @{$report{'data'}};
 }
 
@@ -110,7 +107,7 @@ if( scalar @dates )
 {
     my $appTable = 'applications';
     # Handle new applications
-    my $s = $db->prepare("SELECT $config{tbname}.VendorIdentifier FROM $config{tbname} LEFT JOIN $appTable ON $config{tbname}.VendorIdentifier = $appTable.VendorIdentifier WHERE $appTable.VendorIdentifier is NULL GROUP BY $config{tbname}.VendorIdentifier");
+    my $s = $db->prepare("SELECT dailySalesSummary.VendorIdentifier FROM dailySalesSummary LEFT JOIN $appTable ON dailySalesSummary.VendorIdentifier = $appTable.VendorIdentifier WHERE $appTable.VendorIdentifier is NULL GROUP BY dailySalesSummary.VendorIdentifier");
     if( $s->execute() )
     {
 	while( my ($vid) = $s->fetchrow_array() )
@@ -126,9 +123,9 @@ if( scalar @dates )
     {
 	while( my ($vid) = $s->fetchrow_array() )
 	{
-	    $db->do("UPDATE $appTable SET numDays=(SELECT COUNT(DISTINCT BeginDate) FROM $config{tbname} WHERE VendorIdentifier='$vid') WHERE VendorIdentifier='$vid'");
-	    $db->do("UPDATE $appTable SET numSales=(SELECT SUM(Units) FROM $config{tbname} WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=1) WHERE VendorIdentifier='$vid'");
-	    $db->do("UPDATE $appTable SET numUpdates=(SELECT SUM(Units) FROM $config{tbname} WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=7) WHERE VendorIdentifier='$vid'");
+	    $db->do("UPDATE $appTable SET numDays=(SELECT COUNT(DISTINCT BeginDate) FROM dailySalesSummary WHERE VendorIdentifier='$vid') WHERE VendorIdentifier='$vid'");
+	    $db->do("UPDATE $appTable SET numSales=(SELECT SUM(Units) FROM dailySalesSummary WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=1) WHERE VendorIdentifier='$vid'");
+	    $db->do("UPDATE $appTable SET numUpdates=(SELECT SUM(Units) FROM dailySalesSummary WHERE VendorIdentifier='$vid' AND ProductTypeIdentifier=7) WHERE VendorIdentifier='$vid'");
 	    $db->do("UPDATE $appTable SET avgDailySales=(numSales/numDays), avgDailyUpdates=(numUpdates/numDays) WHERE VendorIdentifier='$vid'");
 	}
     }
