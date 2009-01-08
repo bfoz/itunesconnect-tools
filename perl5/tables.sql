@@ -5,29 +5,29 @@ use `iTunesConnect`;
 DROP TABLE IF EXISTS `dailySalesSummary`;
 CREATE TABLE `dailySalesSummary` (
   `ID` INT UNSIGNED NOT NULL auto_increment, -- Primary Key
-  `Provider` TINYTEXT NOT NULL,
-  `ProviderCountry` TINYTEXT NOT NULL,
-  `VendorIdentifier` TINYTEXT NOT NULL,
-  `UPC` TINYTEXT,
-  `ISRC` TINYTEXT,
-  `ArtistShow`  TINYTEXT NOT NULL,
-  `TitleEpisodeSeason` TINYTEXT NOT NULL,
-  `LabelStudioNetwork` TINYTEXT,
+  `Provider` VARCHAR(255) NOT NULL,
+  `ProviderCountry` CHAR(2) NOT NULL,
+  `VendorIdentifier` VARCHAR(255) NOT NULL,
+  `UPC` CHAR(1),		-- Not used
+  `ISRC` CHAR(1),		-- Not used
+  `ArtistShow`  VARCHAR(255) NOT NULL,
+  `TitleEpisodeSeason` VARCHAR(255) NOT NULL,
+  `LabelStudioNetwork` CHAR(1),
   `ProductTypeIdentifier` TINYINT UNSIGNED NOT NULL,
   `Units` INT,
   `RoyaltyPrice` DECIMAL(10,2) UNSIGNED NOT NULL,
   `BeginDate` DATE NOT NULL,
   `EndDate` DATE NOT NULL,
-  `CustomerCurrency` TINYTEXT NOT NULL,
-  `CountryCode` TINYTEXT NOT NULL,
-  `RoyaltyCurrency` TINYTEXT NOT NULL,
-  `Preorder` TINYTEXT,
-  `SeasonPass` TINYTEXT,
-  `ISAN` TINYTEXT,
-  `AppleIdentifier` TINYTEXT NOT NULL,
+  `CustomerCurrency` CHAR(3) NOT NULL,
+  `CountryCode` CHAR(2) NOT NULL,
+  `RoyaltyCurrency` CHAR(3) NOT NULL,
+  `Preorder` CHAR(1),		-- Not used
+  `SeasonPass` CHAR(1),		-- Not used
+  `ISAN` CHAR(1),
+  `AppleIdentifier` VARCHAR(255) NOT NULL,
   `CustomerPrice` DECIMAL(10,2) NOT NULL,
-  `CMA` TINYTEXT,
-  `AssetContentFlavor` TINYTEXT,
+  `CMA` CHAR(1),		-- Not used
+  `AssetContentFlavor` CHAR(1),	-- Not used
   PRIMARY KEY `ID` (`ID`),
   UNIQUE KEY `VID_PTI_BeginDate_CountryCode` (`VendorIdentifier`(255),`ProductTypeIdentifier`,`BeginDate`,`CountryCode`(2))
 ) COMMENT='Daily Sales/Trend Summary Reports' AUTO_INCREMENT=1;
@@ -38,6 +38,35 @@ CREATE OR REPLACE VIEW dailyTotalUpdates AS SELECT BeginDate, sum(Units) as numU
 
 -- This would be a lot easier if MySQL supported FULL OUTER JOIN
 -- CREATE OR REPLACE VIEW dailyTotals AS SELECT BeginDate, numSales, numUpdates FROM dailyTotalSales FULL OUTER JOIN dailyTotalUpdates USING(BeginDate);
+
+# Units and CustomerPrice must support signed numbers, which indicate refunds/returns
+DROP TABLE IF EXISTS `weeklySalesSummary`;
+CREATE TABLE `weeklySalesSummary` (
+  `Provider` VARCHAR(255) NOT NULL,
+  `ProviderCountry` CHAR(2) NOT NULL,
+  `VendorIdentifier` VARCHAR(255) NOT NULL,
+  `UPC` CHAR(1),		-- Not used
+  `ISRC` CHAR(1),		-- Not used
+  `ArtistShow` VARCHAR(255) NOT NULL,
+  `TitleEpisodeSeason` VARCHAR(255) NOT NULL,
+  `LabelStudioNetwork` CHAR(1),
+  `ProductTypeIdentifier` TINYINT UNSIGNED NOT NULL,
+  `Units` INT,
+  `RoyaltyPrice` DECIMAL(10,2) UNSIGNED NOT NULL,
+  `BeginDate` DATE NOT NULL,
+  `EndDate` DATE NOT NULL,
+  `CustomerCurrency` CHAR(3) NOT NULL,
+  `CountryCode` CHAR(2) NOT NULL,
+  `RoyaltyCurrency` CHAR(3) NOT NULL,
+  `Preorder` CHAR(1),		-- Not used
+  `SeasonPass` CHAR(1),		-- Not used
+  `ISAN` CHAR(1),		-- Not used
+  `AppleIdentifier` VARCHAR(255) NOT NULL,
+  `CustomerPrice` DECIMAL(10,2) NOT NULL,
+  `CMA` CHAR(1),		-- Not used
+  `AssetContentFlavor` CHAR(1),	-- Not used
+  UNIQUE KEY `VID_PTI_BeginDate_CountryCode` (`VendorIdentifier`(255),`ProductTypeIdentifier`,`BeginDate`,`CountryCode`(2))
+) COMMENT='Weekly Sales/Trend Summary Reports';
 
 DROP TABLE IF EXISTS `applications`;
 CREATE TABLE `applications` (
