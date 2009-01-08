@@ -1,5 +1,5 @@
 #! /usr/bin/perl
-# $Id: runner.pl,v 1.10 2009/01/08 03:19:12 bfoz Exp $
+# $Id: runner.pl,v 1.11 2009/01/08 04:14:51 bfoz Exp $
 
 use strict;
 use WWW::iTunesConnect;
@@ -72,6 +72,19 @@ if( $config{path} )
 
 # Otherwise continue on to the database stuff...
 
+sub insertReport
+{
+    my ($db, $tbname, %report) = @_;
+    my @columns = map { "$_=?" } @{$report{'header'}};
+    s/[\\\/ ]//g for @columns;  # Elide characters that can't be in column names
+
+    # Reformat dates into something a database can use
+    @{$_} = map { (/(\d{2})\/(\d{2})\/(\d{4})/ ? "$3$1$2" : $_) } @{$_} for @{$report{'data'}};
+
+    my $insertSummary = $db->prepare("INSERT INTO $tbname SET ".join(',',@columns));
+    $insertSummary->execute(@{$_}) for @{$report{'data'}};
+}
+
 # Get the list of dates available from iTC
 my @dates = $itc->daily_sales_summary_dates;
 
@@ -88,20 +101,28 @@ foreach my $row ( @{$selectDates->fetchall_arrayref} )
 }
 
 # For each report that isn't already in the database...
-for( @dates )
+insertReport($db, 'dailySalesSummary', $itc->weekly_sales_summary($_->{To})) for @dates;
+
+
+# --- Fetch the weekly summaries ---
+
+# Get the list of dates available from iTC
+my @dates = $itc->weekly_sales_summary_dates;
+
+# See which reports aren't already in the database
+my $dates = join(',', map { "'$_->{To}'" } @dates);
+my $selectDates = $db->prepare("SELECT DATE_FORMAT(EndDate,'%m/%d/%Y') FROM weeklySalesSummary WHERE DATE_FORMAT(EndDate,'%m/%d/%Y') IN ($dates) GROUP BY EndDate ORDER BY EndDate DESC");
+$selectDates->execute;
+foreach my $row ( @{$selectDates->fetchall_arrayref} )
 {
-    my %report = $itc->daily_sales_summary($_);
-
-    my @columns;
-    push @columns, "$_=?" for @{$report{'header'}};
-    s/[\\\/ ]//g for @columns;  # Elide characters that can't be in column names
-
-    # Reformat dates into something a database can use
-    @{$_} = map { (/(\d{2})\/(\d{2})\/(\d{4})/ ? "$3$1$2" : $_) } @{$_} for @{$report{'data'}};
-
-    my $insertSummary = $db->prepare("INSERT INTO dailySalesSummary SET ".join(',',@columns));
-    $insertSummary->execute(@{$_}) for @{$report{'data'}};
+    @dates = grep { @$row[0] ne $_->{To} } @dates;
 }
+
+# For each report that isn't already in the database...
+insertReport($db, 'weeklySalesSummary', $itc->weekly_sales_summary($_->{To})) for @dates;
+
+
+# --- Update statistics ---
 
 if( scalar @dates )
 {
@@ -131,31 +152,3 @@ if( scalar @dates )
     }
 }
 
-# --- Fetch the weekly summaries ---
-
-# Get the list of dates available from iTC
-my @dates = $itc->weekly_sales_summary_dates;
-
-# See which reports aren't already in the database
-my $dates = join(',', map { "'$_->{To}'" } @dates);
-my $selectDates = $db->prepare("SELECT DATE_FORMAT(EndDate,'%m/%d/%Y') FROM weeklySalesSummary WHERE DATE_FORMAT(EndDate,'%m/%d/%Y') IN ($dates) GROUP BY EndDate ORDER BY EndDate DESC");
-$selectDates->execute;
-foreach my $row ( @{$selectDates->fetchall_arrayref} )
-{
-    @dates = grep { @$row[0] ne $_->{To} } @dates;
-}
-
-for my $date ( @dates )
-{
-    my %report = $itc->weekly_sales_summary($date->{To});
-
-    my @columns;
-    push @columns, "$_=?" for @{$report{'header'}};
-    s/[\\\/ ]//g for @columns;  # Elide characters that can't be in column names
-
-    # Reformat dates into something a database can use
-    @{$_} = map { (/(\d{2})\/(\d{2})\/(\d{4})/ ? "$3$1$2" : $_) } @{$_} for @{$report{'data'}};
-
-    my $insertSummary = $db->prepare("INSERT INTO weeklySalesSummary SET ".join(',',@columns));
-    $insertSummary->execute(@{$_}) for @{$report{'data'}};
-}
