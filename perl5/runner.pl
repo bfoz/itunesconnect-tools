@@ -1,5 +1,5 @@
 #! /usr/bin/perl
-# $Id: runner.pl,v 1.8 2008/12/10 19:58:53 bfoz Exp $
+# $Id: runner.pl,v 1.9 2009/01/08 02:03:17 bfoz Exp $
 
 use strict;
 use WWW::iTunesConnect;
@@ -132,4 +132,33 @@ if( scalar @dates )
 	    $db->do("UPDATE $appTable SET avgDailySales=(numSales/numDays), avgDailyUpdates=(numUpdates/numDays) WHERE VendorIdentifier='$vid'");
 	}
     }
+}
+
+# --- Fetch the weekly summaries ---
+
+# Get the list of dates available from iTC
+my @dates = $itc->weekly_sales_summary_dates;
+
+# See which reports aren't already in the database
+my $dates = join(',', map { "'$_->{To}'" } @dates);
+my $selectDates = $db->prepare("SELECT DATE_FORMAT(EndDate,'%m/%d/%Y') FROM weeklySalesSummary WHERE DATE_FORMAT(EndDate,'%m/%d/%Y') IN ($dates) GROUP BY EndDate ORDER BY EndDate DESC");
+$selectDates->execute;
+foreach my $row ( @{$selectDates->fetchall_arrayref} )
+{
+    @dates = grep { @$row[0] ne $_->{To} } @dates;
+}
+
+for my $date ( @dates )
+{
+    my %report = $itc->weekly_sales_summary($date->{To});
+
+    my @columns;
+    push @columns, "$_=?" for @{$report{'header'}};
+    s/[\\\/ ]//g for @columns;  # Elide characters that can't be in column names
+
+    # Reformat dates into something a database can use
+    @{$_} = map { (/(\d{2})\/(\d{2})\/(\d{4})/ ? "$3$1$2" : $_) } @{$_} for @{$report{'data'}};
+
+    my $insertSummary = $db->prepare("INSERT INTO weeklySalesSummary SET ".join(',',@columns));
+    $insertSummary->execute(@{$_}) for @{$report{'data'}};
 }
