@@ -1,5 +1,5 @@
 #! /usr/bin/perl
-# $Id: runner.pl,v 1.12 2009/01/08 04:18:22 bfoz Exp $
+# $Id: runner.pl,v 1.13 2009/01/18 20:42:33 bfoz Exp $
 
 use strict;
 use WWW::iTunesConnect;
@@ -101,7 +101,7 @@ foreach my $row ( @{$selectDates->fetchall_arrayref} )
 }
 
 # For each report that isn't already in the database...
-insertReport($db, 'dailySalesSummary', $itc->weekly_sales_summary($_->{To})) for @dates;
+insertReport($db, 'dailySalesSummary', $itc->daily_sales_summary($_)) for @dates;
 
 
 # --- Update statistics ---
