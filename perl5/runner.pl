@@ -1,5 +1,5 @@
 #! /usr/bin/perl
-# $Id: runner.pl,v 1.13 2009/01/18 20:42:33 bfoz Exp $
+# $Id: runner.pl,v 1.14 2009/01/21 07:55:48 bfoz Exp $
 
 use strict;
 use WWW::iTunesConnect;
@@ -151,3 +151,35 @@ foreach my $row ( @{$selectDates->fetchall_arrayref} )
 
 # For each report that isn't already in the database...
 insertReport($db, 'weeklySalesSummary', $itc->weekly_sales_summary($_->{To})) for @dates;
+
+# --- Fetch the monthly financial reports ---
+
+# Get a list of available reports and compare it against the database
+my $list = $itc->financial_report_list;
+
+# See which reports aren't already in the database
+my @dates = keys %$list;
+my $rid = join(',', map { "'$_'" } @dates);
+my $selectDates = $db->prepare("SELECT ReportID FROM FinancialReport WHERE ReportID IN ($rid) GROUP BY ReportID ORDER BY ReportID DESC");
+$selectDates->execute;
+foreach my $row ( @{$selectDates->fetchall_arrayref} )
+{
+    @dates = grep { @$row[0] ne $_ } @dates;
+}
+
+for my $date ( @dates )
+{
+    my %reports = $itc->financial_report($date);
+    for my $month ( keys %reports )
+    {
+	for my $region ( keys %{$reports{$month}} )
+	{
+	    my @columns = map {"$_=?"} ('ReportID', 'RegionCode', @{$reports{$month}{$region}{'header'}});
+	    s/[\\\/\s-]//g for @columns;   # Elide characters that can't be in column names
+
+	    my $insertFinancialReport = $db->prepare("INSERT INTO FinancialReport SET ".join(',',@columns));
+	    $reports{$month}{$region}{'filename'} =~ /_(\d\d)(\d\d)_(\w\w)\.txt/;
+	    $insertFinancialReport->execute('20'.$2.$1, $3, @{$_}) for @{$reports{$month}{$region}{'data'}};
+	}
+    }
+}
