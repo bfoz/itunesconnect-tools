@@ -1,6 +1,6 @@
 <?php
 /*
-	$Id: index.php,v 1.10 2008/11/16 08:01:40 bfoz Exp $
+	$Id: index.php,v 1.11 2009/01/30 05:20:26 bfoz Exp $
 */
 
 // Database account info
@@ -221,13 +221,6 @@ function bindRows() {
 // temporary output buffer
 $echo = '';
 
-////////////////////////////////////// IF WE SHOULD SHOW THE TABLE///////////
-//if ($_POST['tbl_or_chrt'] == 'table') {
-if( !isset($_POST['tbl_or_chrt']) or ($_POST['tbl_or_chrt'] == 'table'))
-{
-/////////////////////////////////////////////////////////////////////////////////
-
-
 // Generate the header rows
 $class = '';
 foreach($dates as $d)
@@ -322,37 +315,6 @@ foreach($reportAppNames as $name)
 }
 $echo .= '</tr></table>';
 
-///////////////////////////////////////////////////////////
-} else {   ///////// END IF FOR TABLE DISPLAY
-////////////////////////////////////////////////////////////
-
-//////////////////////////////////////////////////////////////////////
-////////////////// IF WE SHOULD SHOW THE CHART //////////////////////
-if ($_POST['tbl_or_chrt']=='chart') {
-	$qstr = '';
-	// if specific dates were selected, append specific dates to query string
-	if($datesSelected) {
-		$qstr .= 'd=';
-		foreach($dates as $d)
-			$qstr .= $d . ',';
-		$qstr = rtrim($qstr,',') . '&amp;';
-	}
-	// if specific apps were selected, append names to query string
-	if($appsSelected) {
-		$qstr .= 'a=';
-		foreach($appNames as $a) {
-			if(strlen(trim($a)) > 0)
-				$qstr .= urlencode($a) . ',';
-		}
-		$qstr = rtrim($qstr,',');
-	}
-	$echo .= '<p><img src="chart.php?' . $qstr . '" alt="" /></p>';
-}
-////////////////////////////////
-} ////// END ELSE /////////////
-////////////////////////////////
-
-// TOP FORM WITH DATE/APP/REGION CHECKBOXES
 ?><form action="" method="post">
 	<div class="topform">
 		<table>
@@ -446,11 +408,7 @@ foreach($regions as $reg => $arr)
 		</table>
 	</div>
 	<div class="topform">
-		<input type="submit" name="submit" value="Update" /><br />
-		<input type="radio" name="tbl_or_chrt" value="table"
-<?= ($_POST['tbl_or_chrt']=='' or $_POST['tbl_or_chrt']=='table') ? ' checked="checked"' : ''; ?> />Show Table<br />
-		<input type="radio" name="tbl_or_chrt" value="chart" ';
-<?= ($_POST['tbl_or_chrt']=='chart') ? ' checked="checked"' : ''; ?> /> Show Chart<br />
+		<input type="submit" name="submit" value="Update" />
 	</div>
 </form>
 <div style="clear:both;"></div>
