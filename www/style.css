@@ -63,7 +63,7 @@ div.topform {
 	margin-right:10px;
 }
 div.topform tbody.scroll {
-	height:200px;
+	height:19em;
 	overflow-y:auto;
 	overflow-x:hidden;
 }
@@ -73,4 +73,9 @@ div.topform thead td {
 	background-color:#333333;
 	padding:4px;
 	text-decoration:none;
+}
+
+table tfoot tr
+{
+	background-color:#aaffaa;
 }
