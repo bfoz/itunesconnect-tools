@@ -95,7 +95,7 @@ CREATE TABLE `FinancialReport` (
   `Title` VARCHAR(5000) NOT NULL,
   `LabelStudioNetworkDeveloper` VARCHAR(1000),		-- Not used
   `Grid` VARCHAR(30),			-- Not used
-  `ProductTypeIdentifier` VARCHAR(5) UNSIGNED NOT NULL,
+  `ProductTypeIdentifier` VARCHAR(5),
   `ISANOtherIdentifier` VARCHAR(50),	-- Not used
   `CountryOfSale` CHAR(3) NOT NULL,
   `PreorderFlag` CHAR(1),		-- Not used
