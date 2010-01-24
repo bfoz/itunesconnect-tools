@@ -60,6 +60,11 @@ my $itc = WWW::iTunesConnect->new(user=>$config{user}, password=>$config{passwor
 if( $config{path} )
 {
     my %report = $itc->daily_sales_summary;
+    unless( %report )
+    {
+	use Data::Dumper;
+	die "Could not fetch Daily Sales Summary\n".Dumper($itc);
+    }
     die("No report filename provided by server\n") unless $report{'filename'};
 
     my $filename = $config{path}.'/'.$report{'filename'};
@@ -82,11 +87,24 @@ sub insertReport
     @{$_} = map { (/(\d{2})\/(\d{2})\/(\d{4})/ ? "$3$1$2" : $_) } @{$_} for @{$report{'data'}};
 
     my $insertSummary = $db->prepare("INSERT INTO $tbname SET ".join(',',@columns));
-    $insertSummary->execute(@{$_}) for @{$report{'data'}};
+    for( @{$report{'data'}} )
+    {
+	unless( $insertSummary->execute(@{$_}) )
+	{
+	    use Data::Dumper;
+	    my $q = "INSERT INTO $tbname SET ".join(',',@columns);
+	    die "Could not execute '$q'\n\n".Dumper($itc);
+	}
+    }
 }
 
 # Get the list of dates available from iTC
 my @dates = $itc->daily_sales_summary_dates;
+unless( @dates )
+{
+    use Data::Dumper;
+    die "Could not fetch Daily Sales Summary dates\n".Dumper($itc);
+}
 
 my $db = DBI->connect("DBI:$config{driver}:$config{dbname}", $config{dbuser}, $config{dbpass}, {RaiseError=>1});
 die("Could not connect to database\n") unless ($db);
@@ -101,7 +119,16 @@ foreach my $row ( @{$selectDates->fetchall_arrayref} )
 }
 
 # For each report that isn't already in the database...
-insertReport($db, 'dailySalesSummary', $itc->daily_sales_summary($_)) for @dates;
+for( @dates )
+{
+    my %report = $itc->daily_sales_summary($_);
+    unless( %report )
+    {
+	use Data::Dumper;
+	die "Could not fetch Daily Sales Summary for $_\n".Dumper($itc);
+    }
+    insertReport($db, 'dailySalesSummary', %report);
+}
 
 
 # --- Update statistics ---
@@ -139,6 +166,11 @@ if( scalar @dates )
 
 # Get the list of dates available from iTC
 my @dates = $itc->weekly_sales_summary_dates;
+unless( @dates )
+{
+    use Data::Dumper;
+    die "Could not fetch Weekly Sales Summary dates\n".Dumper($itc);
+}
 
 # See which reports aren't already in the database
 my $dates = join(',', map { "'$_->{To}'" } @dates);
@@ -150,12 +182,26 @@ foreach my $row ( @{$selectDates->fetchall_arrayref} )
 }
 
 # For each report that isn't already in the database...
-insertReport($db, 'weeklySalesSummary', $itc->weekly_sales_summary($_->{To})) for @dates;
+for( @dates )
+{
+    my %report = $itc->weekly_sales_summary($_->{To});
+    unless( %report )
+    {
+	use Data::Dumper;
+	die "Could not fetch Weekly Sales Summary for $_->{To}\n".Dumper($itc);
+    }
+    insertReport($db, 'weeklySalesSummary', %report);
+}
 
 # --- Fetch the monthly financial reports ---
 
 # Get a list of available reports and compare it against the database
 my $list = $itc->financial_report_list;
+unless( $list )
+{
+    use Data::Dumper;
+    die "Could not fetch list of available Financial Reports\n".Dumper($itc);
+}
 
 # See which reports aren't already in the database
 my @dates = keys %$list;
@@ -170,6 +216,11 @@ foreach my $row ( @{$selectDates->fetchall_arrayref} )
 for my $date ( @dates )
 {
     my %reports = $itc->financial_report($date);
+    unless( %reports )
+    {
+	use Data::Dumper;
+	die "Could not fetch Financial Report for $_\n".Dumper($itc);
+    }
     for my $month ( keys %reports )
     {
 	for my $region ( keys %{$reports{$month}} )
