@@ -26,6 +26,13 @@ Released under the [BSD License][license]
 History
 -------
 
+Version 3 - Released February 6, 2010
+
+- Switch to sequential release numbers
+- Add basic error handling in runner.pl
+- MySQL 5.0.32 doesn't like VARCHAR types being assigned as UNSIGNED NOT NULL
+- New report columns that went into effect on April 1, 2009
+
 Version 0.2 - Released January 29, 2008
 
 - Checks the available reports against the database and only fetches new reports
