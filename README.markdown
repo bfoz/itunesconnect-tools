@@ -26,7 +26,7 @@ Released under the [BSD License][license]
 History
 -------
 
-Version 3 - Released February 6, 2010
+[Version 3][release3] - Released February 6, 2010
 
 - Switch to sequential release numbers
 - Add basic error handling in runner.pl
@@ -42,10 +42,13 @@ Version 0.2 - Released January 29, 2008
 
 Version 0.1 - Released November 09, 2008
 
-- First release to Apple's OS X Developer forum
-- Simple hack to get original code posted by Marco Vitanza reading from MySQL instead of text files
+- First release to [Apple's OS X Developer forum][apple0]
+- Simple hack to get original code posted by [Marco Vitanza][MarcoVitanza] reading from MySQL instead of text files
 - Usable, but lots of rough edges
 
 
+[apple0]: http://discussions.apple.com/thread.jspa?threadID=1765831&tstart=0
 [license]: http://www.opensource.org/licenses/bsd-license.php
 [iTC]: http://search.cpan.org/~bfoz/p5-WWW-iTunesConnect/
+[MarcoVitanza]: http://marcovitanza.com/
+[release3]: http://github.com/bfoz/itunesconnect-tools/tarball/v3
