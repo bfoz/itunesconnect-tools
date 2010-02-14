@@ -93,7 +93,7 @@ sub insertReport
 	{
 	    use Data::Dumper;
 	    my $q = "INSERT INTO $tbname SET ".join(',',@columns);
-	    die "Could not execute '$q'\n\n".Dumper($itc);
+	    die "Could not execute '$q' because ".$db->errstr."\n\n".Dumper($itc);
 	}
     }
 }
@@ -106,7 +106,7 @@ unless( @dates )
     die "Could not fetch Daily Sales Summary dates\n".Dumper($itc);
 }
 
-my $db = DBI->connect("DBI:$config{driver}:$config{dbname}", $config{dbuser}, $config{dbpass}, {RaiseError=>1});
+my $db = DBI->connect("DBI:$config{driver}:$config{dbname}", $config{dbuser}, $config{dbpass});
 die("Could not connect to database\n") unless ($db);
 
 # See which dates aren't already in the database
