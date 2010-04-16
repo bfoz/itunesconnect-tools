@@ -56,6 +56,15 @@ my %opt2config = (  'u' => 'user',
 die "Need iTunes username and password\n" unless $config{user} and $config{password};
 my $itc = WWW::iTunesConnect->new(user=>$config{user}, password=>$config{password});
 
+# Attempt a login to verify the user info and look for any notifications
+die("Invalid login information\n") unless $itc->login;
+if( defined $itc->{login_notifications} )
+{
+    print "=== Notifications ===\n";
+    print $_, "\n\n" for $itc->{login_notifications};
+    die;
+}
+
 # If only saving latest report to file, do it and then exit
 if( $config{path} )
 {
