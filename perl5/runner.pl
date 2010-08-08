@@ -204,6 +204,31 @@ for( @dates )
 
 # --- Fetch the monthly financial reports ---
 
+# Map the columns in the report to table columns
+my %column_map = (  'Start Date' =>	'StartDate',
+		    'End Date' =>	'EndDate',
+		    'UPC' =>		'UPC',
+		    'ISRC/ISBN' =>	'ISRC',
+		    'Vendor Identifier' =>	'VendorIdentifier',
+		    'Quantity' =>	'Quantity',
+		    'Partner Share' =>	'PartnerShare',
+		    'Extended Partner Share' =>	'ExtendedPartnerShare',
+		    'Partner Share Currency' =>	'PartnerShareCurrency',
+		    'Sale or Return' =>		'SalesorReturn',
+		    'Apple Identifier' =>	'AppleIdentifier',
+		    'Artist/Show/Developer/Author' =>	'ArtistShowDeveloper',
+		    'Title' => 			'Title',
+		    'Label/Studio/Network/Developer/Publisher' => 'LabelStudioNetworkDeveloper',
+		    'Grid' => 			'Grid',
+		    'Product Type Identifier' =>	'ProductTypeIdentifier',
+		    'ISAN/Other Identifier' =>		'ISANOtherIdentifier',
+		    'Country of Sale' =>	'CountryOfSale',
+		    'Pre-order Flag' =>		'PreorderFlag',
+		    'Promo Code' =>		'PromoCode',
+		    'Customer Price' =>		'CustomerPrice',
+		    'Customer Currency' =>	'CustomerCurrency',
+		 );
+
 # Get a list of available reports and compare it against the database
 my $list = $itc->financial_report_list;
 unless( $list )
@@ -234,7 +259,8 @@ for my $date ( @dates )
     {
 	for my $region ( keys %{$reports{$month}} )
 	{
-	    my @columns = map {"$_=?"} ('ReportID', 'RegionCode', @{$reports{$month}{$region}{'header'}});
+	    my @header = map { $column_map{$_} ? $column_map{$_} : $_ } @{$reports{$month}{$region}{'header'}};
+	    my @columns = map {"$_=?"} ('ReportID', 'RegionCode', @header);
 	    s/[\\\/\s-]//g for @columns;   # Elide characters that can't be in column names
 
 	    my $insertFinancialReport = $db->prepare("INSERT INTO FinancialReport SET ".join(',',@columns));
