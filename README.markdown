@@ -26,6 +26,13 @@ Released under the [BSD License][license]
 History
 -------
 
+[Version 4][release4] - Released August 9, 2010
+
+- Map finanacial report columns to database table columns
+- Attempt to handle login notifications
+- Don't use DBI's RaiseError=1
+- Fix README links
+
 [Version 3][release3] - Released February 6, 2010
 
 - Switch to sequential release numbers
@@ -52,3 +59,4 @@ Version 0.1 - Released November 09, 2008
 [iTC]: http://search.cpan.org/~bfoz/p5-WWW-iTunesConnect/
 [MarcoVitanza]: http://marcovitanza.com/
 [release3]: http://github.com/bfoz/itunesconnect-tools/tarball/v3
+[release4]: http://github.com/bfoz/itunesconnect-tools/tarball/v4
