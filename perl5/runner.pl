@@ -4,7 +4,7 @@
 use strict;
 use WWW::iTunesConnect;
 use DBI;
-use Getopt::Std;
+use Getopt::Long;
 
 sub usage
 {
@@ -32,7 +32,10 @@ my %config = (	'user' => undef,
 
 # Parse the command line options
 my %options;
-getopts('u:p:d:D:U:P:s:c:', \%options) or usage();
+GetOptions(\%options, 'user|u=s', 'password|p=s', 'dbname|d=s', 'dbuser|U=s',
+		      'dbpass|P=s', 'driver|D=s', 'path|s', 'config|c=s')
+		      or usage();
+
 # Handle -c early so the default config file path can be overriden
 $config{config} = $options{c} if $options{c};
 delete $options{config};	# Don't need this one any more
@@ -41,17 +44,8 @@ delete $options{config};	# Don't need this one any more
 my %in = do $config{config};
 @config{keys %in} = values %in;
 
-my %opt2config = (  'u' => 'user',
-                    'p' => 'password',
-                    'd' => 'dbname',
-                    'U' => 'dbuser',
-                    'P' => 'dbpass',
-                    'D' => 'mysql',
-                    's' => 'path',
-                 );
-
 # Command line options override defaults and config.pl
-@config{@opt2config{keys %options}} = values %options;
+@config{keys %options} = values %options;
 
 die "Need iTunes username and password\n" unless $config{user} and $config{password};
 my $itc = WWW::iTunesConnect->new(user=>$config{user}, password=>$config{password});
