@@ -9,6 +9,7 @@ sub usage
     print "    -u user	iTunes Connect username\n";
     print "    -p pass	iTunes Connect password\n";
     print "    -c path	Path to config file (defaults to ./config.pl)\n";
+    print "    --total	Display report totals\n";
     die;
 }
 
@@ -19,7 +20,7 @@ my %config = (	'user' => undef,
 
 # Parse the command line options
 my %options;
-GetOptions(\%options, 'user|u=s', 'password|p=s', 'config|c=s');
+GetOptions(\%options, 'user|u=s', 'password|p=s', 'config|c=s', 'total');
 
 # Handle -c early so the default config file path can be overriden
 $config{config} = $options{c} if $options{c};
@@ -48,6 +49,30 @@ for my $date ( sort keys %list )
     {
     	print "\t$region\t";
     	print "\t" if length($region) < 8;
-    	print $list{$date}{$region}{filename}, "\n";
+
+	if( exists $config{'total'} )
+	{
+	    my %report = $itc->fetch_financial_report($date, $region);
+	    next unless %report;
+
+	    # Parse the data
+	    my %parsed = WWW::iTunesConnect::parse_financial_report($report{'content'});
+	    next unless %parsed;
+
+	    my %totals;
+	    for my $row ( @{$parsed{'data'}} )
+	    {
+		my $eps = @$row[7];		# Extended Parner Share
+		my $currency = @$row[8];	# Parner Share Currency
+		$totals{$currency} = 0 unless exists $totals{$currency};
+		$totals{$currency} += $eps;
+	    }
+	    printf "\t%6.2f %s", $totals{$_}, $_ for keys %totals;
+	}
+	else
+	{
+	    print $list{$date}{$region}{filename};
+	}
+	print "\n";
     }
 }
