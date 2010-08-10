@@ -42,6 +42,7 @@ print (($itc->login) ? "SUCCESS\n" : "FAIL\n");
 my %list = %{$itc->financial_report_list};
 die "Could not fetch the list of financial reports\n" unless %list;
 
+my %grand_totals;
 for my $date ( sort keys %list )
 {
     print "$date";
@@ -66,6 +67,8 @@ for my $date ( sort keys %list )
 		my $currency = @$row[8];	# Parner Share Currency
 		$totals{$currency} = 0 unless exists $totals{$currency};
 		$totals{$currency} += $eps;
+		$grand_totals{$currency} = 0 unless exists $grand_totals{$currency};
+		$grand_totals{$currency} += $eps;
 	    }
 	    printf "\t%6.2f %s", $totals{$_}, $_ for keys %totals;
 	}
@@ -75,4 +78,10 @@ for my $date ( sort keys %list )
 	}
 	print "\n";
     }
+}
+
+if( exists $config{'total'} )
+{
+    print "\nTotals";
+    printf "\t%6.2f %s\n", $grand_totals{$_}, $_ for sort keys %grand_totals;
 }
