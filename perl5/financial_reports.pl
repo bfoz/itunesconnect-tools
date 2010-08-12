@@ -9,6 +9,7 @@ sub usage
     print "    -u user	iTunes Connect username\n";
     print "    -p pass	iTunes Connect password\n";
     print "    -c path	Path to config file (defaults to ./config.pl)\n";
+    print "    --save dir	Save the reports to the given directory\n";
     print "    --total	Display report totals\n";
     die;
 }
@@ -17,7 +18,7 @@ my %config;	# Configuration options
 
 # Parse the command line options
 my %options = ( 'config' => 'config.pl');
-GetOptions(\%options, 'user|u=s', 'password|p=s', 'config|c=s', 'total');
+GetOptions(\%options, 'user|u=s', 'password|p=s', 'config|c=s', 'save=s', 'total');
 
 # Handle the config path early so the default config file path can be overriden
 $config{'config'} = $options{'config'} if $options{'config'};
@@ -29,6 +30,20 @@ my %in = do $config{config};
 
 # Command line options override defaults and config.pl
 @config{keys %options} = values %options;
+
+# Post-process the command line arguments
+if( exists $config{'save'} )
+{
+    use File::Slurp;
+    unless( -d $config{'save'} )
+    {
+	use File::Path;
+	mkpath($config{'save'});
+    }
+}
+
+$config{'fetch'} = 1 if exists $config{'total'} or exists $config{'save'};
+
 
 die "Need iTunes username and password\n" unless $config{user} and $config{password};
 my $itc = WWW::iTunesConnect->new(user=>$config{user}, password=>$config{password});
@@ -48,11 +63,22 @@ for my $date ( sort keys %list )
     	print "\t$region\t";
     	print "\t" if length($region) < 8;
 
+	# Fetch the report if needed
+	my %report;
+	if( exists $config{'fetch'} )
+	{
+	    %report = $itc->fetch_financial_report($date, $region);
+	    next unless %report;
+	}
+
+	# Handle the --save command
+	if( exists $config{'save'} )
+	{
+	    write_file($config{'save'}.'/'.$list{$date}{$region}{'filename'}, $report{'content'});
+	}
+
 	if( exists $config{'total'} )
 	{
-	    my %report = $itc->fetch_financial_report($date, $region);
-	    next unless %report;
-
 	    # Parse the data
 	    my %parsed = WWW::iTunesConnect::parse_financial_report($report{'content'});
 	    next unless %parsed;
