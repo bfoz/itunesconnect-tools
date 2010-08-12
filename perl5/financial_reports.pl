@@ -9,6 +9,8 @@ sub usage
     print "    -u user	iTunes Connect username\n";
     print "    -p pass	iTunes Connect password\n";
     print "    -c path	Path to config file (defaults to ./config.pl)\n";
+    print "    --asc	Sort reports by date (ascending)\n";
+    print "    --desc	Sort reports by date (descending, default)\n";
     print "    --save dir	Save the reports to the given directory\n";
     print "    --total	Display report totals\n";
     die;
@@ -18,7 +20,10 @@ my %config;	# Configuration options
 
 # Parse the command line options
 my %options = ( 'config' => 'config.pl');
-GetOptions(\%options, 'user|u=s', 'password|p=s', 'config|c=s', 'save=s', 'total');
+GetOptions(\%options, 'user|u=s', 'password|p=s', 'config|c=s',
+		      'asc' => sub { $options{'sort'} = 1; },
+		      'desc' => sub { $options{'sort'} = 0; },
+		      'save=s', 'total');
 
 # Handle the config path early so the default config file path can be overriden
 $config{'config'} = $options{'config'} if $options{'config'};
@@ -55,7 +60,7 @@ my %list = %{$itc->financial_report_list};
 die "Could not fetch the list of financial reports\n" unless %list;
 
 my %grand_totals;
-for my $date ( sort keys %list )
+for my $date ( sort { $options{'sort'} ? ($a cmp $b) : ($b cmp $a) } keys %list )
 {
     print "$date";
     for my $region ( sort keys %{$list{$date}} )
