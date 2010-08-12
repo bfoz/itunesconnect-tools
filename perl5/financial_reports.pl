@@ -5,7 +5,7 @@ use Getopt::Long;
 
 sub usage
 {
-    print "./fetch_all_financial_reports.pl [options]\n";
+    print "./financial_reports.pl [options]\n";
     print "    -u user	iTunes Connect username\n";
     print "    -p pass	iTunes Connect password\n";
     print "    -c path	Path to config file (defaults to ./config.pl)\n";
@@ -13,18 +13,15 @@ sub usage
     die;
 }
 
-# Default configuration options
-my %config = (	'user' => undef,
-		'password' => undef,
-		'config' => 'config.pl');
+my %config;	# Configuration options
 
 # Parse the command line options
-my %options;
+my %options = ( 'config' => 'config.pl');
 GetOptions(\%options, 'user|u=s', 'password|p=s', 'config|c=s', 'total');
 
-# Handle -c early so the default config file path can be overriden
-$config{config} = $options{c} if $options{c};
-delete $options{config};	# Don't need this one any more
+# Handle the config path early so the default config file path can be overriden
+$config{'config'} = $options{'config'} if $options{'config'};
+delete $options{'config'};	# Don't need this one any more
 
 # Config file overrides defaults
 my %in = do $config{config};
